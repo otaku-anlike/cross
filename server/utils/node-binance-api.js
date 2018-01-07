@@ -39,13 +39,13 @@ module.exports = function() {
 			}
 		};
 		request(opt, function(error, response, body) {
-			if ( !response || !body ) throw "publicRequest error: "+error;
+      if (!response || !body) console.log("publicRequest error: " + error) //throw "publicRequest error: "+error;
 			if ( callback ) callback(JSON.parse(body));
 		});
 	};
 	
 	const apiRequest = function(url, callback, method = "GET") {
-		if ( !options.APIKEY ) throw "apiRequest: Invalid API Key";
+    if (!options.APIKEY) console.log("throw apiRequest: Invalid API Key");
 		let opt = {
 			url: url,
 			method: method,
@@ -58,13 +58,13 @@ module.exports = function() {
 			}
 		};
 		request(opt, function(error, response, body) {
-			if ( !response || !body ) throw "apiRequest error: "+error;
+      if (!response || !body) console.log("throw apiRequest error: "+error);
 			if ( callback ) callback(JSON.parse(body));
 		});
 	};
 		
 	const signedRequest = function(url, data, callback, method = "GET") {
-		if ( !options.APISECRET ) throw "signedRequest: Invalid API Secret";
+    if (!options.APISECRET) console.log("throw signedRequest: Invalid API Secret");
 		if ( !data ) data = {};
 		data.timestamp = new Date().getTime();
 		if ( typeof data.symbol !== "undefined" ) data.symbol = data.symbol.replace('_','');
@@ -83,7 +83,7 @@ module.exports = function() {
 			}
 		};
 		request(opt, function(error, response, body) {
-			if ( !response || !body ) throw "signedRequest error: "+error;
+      if (!response || !body) console.log("throw signedRequest error: "+error);
 			if ( callback ) callback(JSON.parse(body));
 		});
 	};
@@ -440,13 +440,13 @@ module.exports = function() {
 		},
 		prices: function(callback) {
 			request(base+"v1/ticker/allPrices", function(error, response, body) {
-				if ( !response || !body ) throw "allPrices error: "+error;
+        if (!response || !body) console.log("throw allPrices error: "+error);
 				if ( callback ) callback(priceData(JSON.parse(body)));
 			});
 		},
 		bookTickers: function(callback) {
 			request(base+"v1/ticker/allBookTickers", function(error, response, body) {
-				if ( !response || !body ) throw "allBookTickers error: "+error;
+        if (!response || !body) console.log("throw allBookTickers error: "+error);
 				if ( callback ) callback(bookPriceData(JSON.parse(body)));
 			});
 		},
