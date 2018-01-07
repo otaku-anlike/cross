@@ -1,0 +1,29 @@
+#panel{
+  height:65vh;
+  background:#fff;
+}
+
+#panel text{
+  line-height: 13vh;
+  border-right: 1rpx solid #ddd;
+  border-bottom: 1rpx solid #ddd;
+}
+
+.flex-row{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.flex-column{
+  display: block;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.flex-cell{
+  flex: 2;
+  border:2px solid red;
+  border-width: 1rpx 1rpx 1rpx 1rpx; 
+}
