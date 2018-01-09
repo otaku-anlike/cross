@@ -49,8 +49,8 @@
     </view>
 
     <!-- 信道连接测试 -->
-    <view class="tunnel">
-        <view class="tunnel-text">
+    <view class="tunnel" hidden='true'>
+        <view class="tunnel-text" >
             <text>信道</text>
             <switch class="tunnel-switch" bindchange="switchChange" color="#007AFF"/>
         </view>
@@ -64,10 +64,17 @@
             <text>取消任务</text>
         </view>
     </view>
-    <view class="uploader">
-        <navigator url="../category/category" open-type="navigate" class="uploader-text">
-            <text>看行情</text>
-        </navigator>
+    <view class="tunnel" >
+      <view class="tunnel-text">
+          <navigator url="../category/category" open-type="navigate" class="uploader-text">
+              <text>看行情</text>
+          </navigator>
+      </view>
+          <view class="tunnel-text">
+          <navigator url="../trades/index" open-type="navigate" class="uploader-text">
+              <text>看行情2</text>
+          </navigator>
+      </view>
     </view>
     <!-- 上传图片测试 -->
     <view class="uploader">

@@ -1,6 +1,6 @@
 
 
-const select_symbols = exchange => {
+const select_list_symbols = exchange => {
   return "SELECT * FROM symbols WHERE exchange = '" + exchange + "'";
 }
 
@@ -8,8 +8,8 @@ const select_list_macd_cross = exchange => {
   return "SELECT * FROM macd_cross";
 }
 
-const select_macd_cross = (exchange, symbol, type, period) => {
-  return "SELECT * FROM macd_cross WHERE exchange = '" + exchange + "' AND symbol = '" + symbol + "' AND type = '" + type + "' AND period = '" + period + "'";
+const select_macd_cross = (exchange, symbol, period) => {
+  return "SELECT * FROM macd_cross WHERE exchange = '" + exchange + "' AND symbol = '" + symbol + "' AND period = '" + period + "'";
 }
 
 const insert_macd_cross = (exchange, symbol, type, price, period, time) => {
@@ -44,8 +44,20 @@ const update_schedule_lasttime = (lasttime, status, exchange, period) => {
   return "UPDATE `schedule` SET `lasttime`='" + lasttime + "', `status`=" + status + " WHERE exchange = '" + exchange + "' AND period = '" + period + "'";
 }
 
+const select_symbols = (exchange, symbol) => {
+  return "SELECT * FROM symbols WHERE exchange = '" + exchange + "' AND symbol = '" + symbol + "'";
+}
+
+const insert_symbols = (exchange, symbol, price, time) => {
+  return "INSERT INTO symbols (`exchange`, `symbol`, `price`, `time`) VALUES ('" + exchange + "','" + symbol + "'," + price + ",'" + time + "')";
+}
+
+const update_symbols = (price, time, id) => {
+  return "UPDATE `symbols` SET `price`=" + price + ",`time`='" + time + "' WHERE id=" + id;
+}
+
 module.exports = {
-  select_symbols,
+  select_list_symbols,
   select_macd_cross,
   insert_macd_cross,
   update_macd_cross,
@@ -55,5 +67,8 @@ module.exports = {
   select_schedule,
   update_schedule,
   update_schedule_lasttime,
-  select_list_macd_cross
+  select_list_macd_cross,
+  select_symbols,
+  insert_symbols,
+  update_symbols
 }
