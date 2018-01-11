@@ -17,11 +17,13 @@ const CONF = {
      * 开发环境下，MySQL 的初始密码为您的微信小程序 appid
      */
     mysql: {
-        host: 'localhost',
+        // host: 'localhost',
+      host: '172.16.145.44',
         port: 3306,
         user: 'root',
         db: 'cAuth',
-        pass: 'wxda8d022f82ef393e',
+        // pass: 'wxda8d022f82ef393e',
+        pass: 'A82yR2oZ30891',
         char: 'utf8mb4'
     },
 
