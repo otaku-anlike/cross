@@ -1,270 +1,359 @@
-//index.js
-var qcloud = require('../../vendor/wafer2-client-sdk/index')
-var config = require('../../config')
-var util = require('../../utils/util.js')
+/*
+ * 
+ * WordPres版微信小程序
+ * author: jianbo
+ * organization: 守望轩  www.watch-life.net
+ * github:    https://github.com/iamxjb/winxin-app-watch-life.net
+ * 技术支持微信号：iamxjb
+ * 开源协议：MIT
+ * 
+ *  *Copyright (c) 2017 https://www.watch-life.net All rights reserved.
+ */
+
+var Api = require('../../utils/api.js');
+var util = require('../../utils/util.js');
+var WxParse = require('../../wxParse/wxParse.js');
+var wxApi = require('../../utils/wxApi.js')
+var wxRequest = require('../../utils/wxRequest.js')
+var configWafer = require('../../config')
+
+import config from '../../utils/config.js'
+
+var pageCount = config.getPageCount;
 
 Page({
-    data: {
-        userInfo: {},
-        logged: false,
-        takeSession: false,
-        requestResult: ''
-    },
+  data: {    
+    postsList: [],
+    postsShowSwiperList:[],
+    isLastPage:false,    
+    page: 1,
+    search: '',
+    categories: 0,
+    showerror:"none",
+    showCategoryName:"",
+    categoryName:"",
+    showallDisplay:"block", 
+    displayHeader:"none",
+    displaySwiper: "none",
+    floatDisplay: "none",
+    displayfirstSwiper:"none",
+    topNav: []
+    
 
-    // 用户登录示例
-    login: function() {
-        if (this.data.logged) return
+  },
+  formSubmit: function (e) {
+    var url = '../list/list'
+    var key ='';
+    if (e.currentTarget.id =="search-input")
+    {
+        key = e.detail.value;
+    }
+    else{
 
-        util.showBusy('正在登录')
-        var that = this
+        key = e.detail.value.input;
 
-        // 调用登录接口
-        qcloud.login({
-            success(result) {
-                if (result) {
-                    util.showSuccess('登录成功')
-                    that.setData({
-                        userInfo: result,
-                        logged: true
-                    })
-                } else {
-                    // 如果不是首次登录，不会返回用户信息，请求用户信息接口获取
-                    qcloud.request({
-                        url: config.service.requestUrl,
-                        login: true,
-                        success(result) {
-                            util.showSuccess('登录成功')
-                            that.setData({
-                                userInfo: result.data.data,
-                                logged: true
-                            })
-                        },
-
-                        fail(error) {
-                            util.showModel('请求失败', error)
-                            console.log('request fail', error)
-                        }
-                    })
-                }
-            },
-
-            fail(error) {
-                util.showModel('登录失败', error)
-                console.log('登录失败', error)
-            }
-        })
-    },
-
-    // 切换是否带有登录态
-    switchRequestMode: function (e) {
-        this.setData({
-            takeSession: e.detail.value
-        })
-        this.doRequest()
-    },
-
-    doRequest: function () {
-        util.showBusy('请求中...')
-        var that = this
-        var options = {
-            url: config.service.requestUrl,
-            login: true,
-            success (result) {
-                util.showSuccess('请求成功完成')
-                console.log('request success', result)
-                that.setData({
-                    requestResult: JSON.stringify(result.data)
-                })
-            },
-            fail (error) {
-                util.showModel('请求失败', error);
-                console.log('request fail', error);
-            }
-        }
-        if (this.data.takeSession) {  // 使用 qcloud.request 带登录态登录
-            qcloud.request(options)
-        } else {    // 使用 wx.request 则不带登录态
-            wx.request(options)
-        }
-    },
-
-    // 上传图片接口
-    doUpload: function () {
-        var that = this
-
-        // 选择图片
-        wx.chooseImage({
-            count: 1,
-            sizeType: ['compressed'],
-            sourceType: ['album', 'camera'],
-            success: function(res){
-                util.showBusy('正在上传')
-                var filePath = res.tempFilePaths[0]
-
-                // 上传图片
-                wx.uploadFile({
-                    url: config.service.uploadUrl,
-                    filePath: filePath,
-                    name: 'file',
-
-                    success: function(res){
-                        util.showSuccess('上传图片成功')
-                        console.log(res)
-                        res = JSON.parse(res.data)
-                        console.log(res)
-                        that.setData({
-                            imgUrl: res.data.imgUrl
-                        })
-                    },
-
-                    fail: function(e) {
-                        util.showModel('上传图片失败')
-                    }
-                })
-
-            },
-            fail: function(e) {
-                console.error(e)
-            }
-        })
-    },
-
-    // 预览图片
-    previewImg: function () {
-        wx.previewImage({
-            current: this.data.imgUrl,
-            urls: [this.data.imgUrl]
-        })
-    },
-
-    // 切换信道的按钮
-    switchChange: function (e) {
-        var checked = e.detail.value
-
-        if (checked) {
-            this.openTunnel()
-        } else {
-            this.closeTunnel()
-        }
-    },
-
-    openTunnel: function () {
-        util.showBusy('信道连接中...')
-        // 创建信道，需要给定后台服务地址
-        var tunnel = this.tunnel = new qcloud.Tunnel(config.service.tunnelUrl)
-
-        // 监听信道内置消息，包括 connect/close/reconnecting/reconnect/error
-        tunnel.on('connect', () => {
-            util.showSuccess('信道已连接')
-            console.log('WebSocket 信道已连接')
-            this.setData({ tunnelStatus: 'connected' })
-        })
-
-        tunnel.on('close', () => {
-            util.showSuccess('信道已断开')
-            console.log('WebSocket 信道已断开')
-            this.setData({ tunnelStatus: 'closed' })
-        })
-
-        tunnel.on('reconnecting', () => {
-            console.log('WebSocket 信道正在重连...')
-            util.showBusy('正在重连')
-        })
-
-        tunnel.on('reconnect', () => {
-            console.log('WebSocket 信道重连成功')
-            util.showSuccess('重连成功')
-        })
-
-        tunnel.on('error', error => {
-            util.showModel('信道发生错误', error)
-            console.error('信道发生错误：', error)
-        })
-
-        // 监听自定义消息（服务器进行推送）
-        tunnel.on('speak', speak => {
-          var that = this
-            util.showModel('信道消息3', speak)
-            that.setData({
-              requestResult: JSON.stringify(speak)
-            })
-            console.log('收到说话消息：', speak)
-        })
-
-        // 打开信道
-        tunnel.open()
-
-        this.setData({ tunnelStatus: 'connecting' })
-    },
-
-    /**
-     * 点击「发送消息」按钮，测试使用信道发送消息
-     */
-    sendMessage() {
-        if (!this.data.tunnelStatus || !this.data.tunnelStatus === 'connected') return
-        // 使用 tunnel.isActive() 来检测当前信道是否处于可用状态
-        if (this.tunnel && this.tunnel.isActive()) {
-            // 使用信道给服务器推送「speak」消息
-            this.tunnel.emit('speak', {
-                'word': 'I say something at ' + new Date(),
-            });
-        }
-    },
-    cancle() {
-      // 使用 tunnel.isActive() 来检测当前信道是否处于可用状态
-      if (this.tunnel && this.tunnel.isActive()) {
-        // 使用信道给服务器推送「speak」消息
-        this.tunnel.emit('cancle', {
-          'word': 'I say cancle something at ' + new Date(),
-        });
-      }
-    },
-    /**
-     * 点击「关闭信道」按钮，关闭已经打开的信道
-     */
-    closeTunnel() {
-        if (this.tunnel) {
-            this.tunnel.close();
-        }
-        util.showBusy('信道连接中...')
-        this.setData({ tunnelStatus: 'closed' })
-    },
-    testStart: function () {
-      util.showBusy('请求中...')
-      var that = this
-      qcloud.request({
-        url: `${config.service.host}/weapp/later/start`,
-        // login: false,
-        method: 'get',
-        success(result) {
-          util.showSuccess('请求成功完成')
-          // that.setData({
-          //   requestResult: JSON.stringify(result.data)
-          // })
-        },
-        fail(error) {
-          util.showModel('请求失败', error);
-          console.log('request fail', error);
-        }
-      })
-    },
-    testEnd: function () {
-      util.showBusy('请求中...')
-      var that = this
-      qcloud.request({
-        url: `${config.service.host}/weapp/later/end`,
-        // login: false,
-        method: 'get',
-        success(result) {
-          util.showSuccess('请求成功完成')
-          // that.setData({
-          //   requestResult: JSON.stringify(result.data)
-          // })
-        },
-        fail(error) {
-          util.showModel('请求失败', error);
-          console.log('request fail', error);
-        }
+    }
+    if (key != '') {
+      url = url + '?search=' +key;
+      wx.navigateTo({
+        url: url
       })
     }
+    else
+    {
+      wx.showModal({
+        title: '提示',
+        content: '请输入内容',
+        showCancel: false,
+      });
+
+
+    }
+  },
+  onShareAppMessage: function () {
+    return {
+      title: '“' + config.getWebsiteName+'”网站微信小程序,基于WordPress版小程序构建.技术支持：www.watch-life.net',
+      path: 'pages/index/index',
+      success: function (res) {
+        // 转发成功
+      },
+      fail: function (res) {
+        // 转发失败
+      }
+    }
+  },
+  onPullDownRefresh: function () {
+    var self = this;
+    self.setData({
+      showerror: "none",
+      showallDisplay:"none",
+      displaySwiper:"none",
+      floatDisplay:"none",
+      isLastPage:false,
+      page:0,
+      postsShowSwiperList:[]
+    });
+    this.fetchTopFivePosts(); 
+    
+  },
+  onReachBottom: function () {  
+   
+  },
+  onLoad: function (options) {
+    var self = this; 
+    this.fetchTopFivePosts();
+    self.setData({
+        topNav: config.getIndexNav
+
+    });
+       
+  },
+  onShow: function (options){
+      wx.setStorageSync('openLinkCount', 0);
+
+  },  
+  fetchTopFivePosts: function () {
+    var self = this;
+    //取置顶的文章
+    var getPostsRequest = wxRequest.getRequest(`${configWafer.service.host}/weapp/demo`);
+    getPostsRequest.then(response => {
+        if (response.data.status =='200' && response.data.posts.length > 0) {
+                self.setData({
+                    postsShowSwiperList: response.data.posts,
+                    postsShowSwiperList: self.data.postsShowSwiperList.concat(response.data.posts.map(function (item) {
+                        //item.firstImage = Api.getContentFirstImage(item.content.rendered);
+                        if (item.post_medium_image_300 == null || item.post_medium_image_300 == '') {
+                            if (item.content_first_image != null && item.content_first_image != '') {
+                                item.post_medium_image_300 = item.content_first_image;
+                            }
+                            else {
+                                item.post_medium_image_300 = "../../images/logo700.png";
+                            }
+
+                        }
+                        return item;
+                    })),
+                    showallDisplay: "block",
+                    displaySwiper: "block"
+                });
+                
+            }
+            else {
+                self.setData({
+                    displaySwiper: "none",
+                    displayHeader: "block",
+                    showallDisplay: "block",
+
+                });
+                
+            }
+     
+    })
+        .then(response=>{
+            self.fetchPostsData(self.data);
+
+        })
+        .catch(function (response){
+            console.log(response); 
+            self.setData({
+                showerror: "block",
+                floatDisplay: "none"
+            });
+
+        })
+        .finally(function () {
+        
+    });            
+   
+  },
+
+  //获取文章列表数据
+  fetchPostsData: function (data) {
+    var self = this;    
+    if (!data) data = {};
+    if (!data.page) data.page = 1;
+    if (!data.categories) data.categories = 0;
+    if (!data.search) data.search = '';
+    if (data.page === 1) {
+      self.setData({
+        postsList: []
+      });
+    };
+    wx.showLoading({
+      title: '正在加载',
+      mask:true
+    }); 
+    // var getPostsRequest = wxRequest.getRequest(Api.getPosts(data));
+    var getPostsRequest = wxRequest.getRequest(`${configWafer.service.host}/weapp/trades`);
+    getPostsRequest
+        .then(response => {
+          console.log(response)
+            if (response.statusCode === 200) {
+
+                if (response.data.length < pageCount) {
+                    self.setData({
+                        isLastPage: true
+                    });
+                }
+                self.setData({
+                    floatDisplay: "block",
+                
+                    postsList: response.data.data,
+                    // self.data.postsList.concat(response.data.list(function (item) {
+
+                    //     var strdate = item.date
+                    //     if (item.category_name != null) {
+
+                    //         item.categoryImage = "../../images/category.png";
+                    //     }
+                    //     else {
+                    //         item.categoryImage = "";
+                    //     }
+
+                    //     if (item.post_thumbnail_image == null || item.post_thumbnail_image == '') {
+                    //         item.post_thumbnail_image = "../../images/logo700.png";
+                    //     }
+                    //     item.date = util.cutstr(strdate, 10, 1);
+                    //     return item;
+                    // })),
+
+                });
+                setTimeout(function () {
+                    wx.hideLoading();
+                }, 900);
+            }
+            else {
+                if (response.data.code == "rest_post_invalid_page_number") {
+                    self.setData({
+                        isLastPage: true
+                    });
+                    wx.showToast({
+                        title: '没有更多内容',
+                        mask: false,
+                        duration: 1500
+                    });
+                }
+                else {
+                    wx.showToast({
+                        title: response.data.message,
+                        duration: 1500
+                    })
+                }
+            }
+
+
+        })
+        .catch(function (response)
+        {
+            if (data.page == 1) {
+
+                self.setData({
+                    showerror: "block",
+                    floatDisplay: "none"
+                });
+
+            }
+            else {
+                wx.showModal({
+                    title: '加载失败',
+                    content: '加载数据失败,请重试.',
+                    showCancel: false,
+                });
+                self.setData({
+                    page: data.page - 1
+                });
+            }
+
+        })
+        .finally(function (response) {
+            wx.hideLoading();
+            wx.stopPullDownRefresh();
+        });
+  },
+  //加载分页
+  loadMore: function (e) {
+    
+    var self = this;
+    if (!self.data.isLastPage)
+    {
+      self.setData({
+        page: self.data.page + 1
+      });
+      //console.log('当前页' + self.data.page);
+      this.fetchPostsData(self.data);
+    }
+    else
+    {
+      wx.showToast({
+        title: '没有更多内容',
+        mask: false,
+        duration: 1000
+      });
+    }
+  },
+  // 跳转至查看文章详情
+  redictDetail: function (e) {
+    // console.log('查看文章');
+    var id = e.currentTarget.id,
+      url = '../detail/detail?id=' + id;
+    wx.navigateTo({
+      url: url
+    })
+  },
+  //首页图标跳转
+  onNavRedirect:function(e){      
+      var url = e.currentTarget.dataset.redirectlink;
+      var redirectType = e.currentTarget.dataset.redirecttype;
+      var appid = e.currentTarget.dataset.appid; 
+      if (redirectType=='page')
+      {
+          wx.navigateTo({
+              url: url
+          })
+      }
+      else if (redirectType == 'app')
+      {
+          wx.navigateToMiniProgram({
+              appId: appid,
+              envVersion: 'release',
+              path: url,
+              success(res) {
+                  // 打开成功
+              },
+              fail: function (res) {
+                  console.log(res);
+              }
+          })
+
+      }   
+      
+  },
+  // 跳转至查看小程序列表页面或文章详情页
+  redictAppDetail: function (e) {
+      // console.log('查看文章');
+      var id = e.currentTarget.id;
+      var redicttype = e.currentTarget.dataset.redicttype;
+      var url='';
+      if (redicttype == 'detailpage')
+      {
+          url = '../detail/detail?id=' + id;
+      }
+      else if (redicttype == 'apppage')
+      {
+          url = '../applist/applist';
+      }
+      
+      wx.navigateTo({
+          url: url
+      })
+  },
+  //返回首页
+  redictHome: function (e) {
+    //console.log('查看某类别下的文章');  
+    var id = e.currentTarget.dataset.id,
+      url = '/pages/index/index';
+    wx.switchTab({
+      url: url
+    });
+  }
 })

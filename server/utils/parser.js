@@ -6,6 +6,23 @@ const formatTime = datetime => {
   return nowDate.toLocaleDateString() + " " + nowDate.toLocaleTimeString();
 }
 
+        // '1';//空仓等待'
+        //2'金叉'
+        //3'继续持有'
+        //4'死叉'
+const formatType = type => {
+  if ('1' == type) {
+    type = '空仓等待'
+  } else if('2' == type) {
+    type = '金叉'
+  } else if ('3' == type) {
+    type = '继续持有'
+  } else if ('4' == type) {
+    type = '死叉'
+  } 
+  return type;
+}
+
 
 // 解析k线数据
 const parseKLinesData = array =>{
@@ -22,5 +39,6 @@ const parseKLinesData = array =>{
 
 module.exports = {
      parseKLinesData,
-     formatTime
+     formatTime,
+     formatType
 }
